@@ -3,9 +3,9 @@
 #include <string>
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
+    if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " <model_path> <file_path1> [file_path2] ..." << std::endl;
-        std::cerr << "Example: " << argv[0] << " ./standard_v3_3/model.onnx ./test.txt" << std::endl;
+        std::cerr << "Example: " << argv[0] << " ./models/standard_v3_3/model.onnx ./test.txt" << std::endl;
         return 1;
     }
 

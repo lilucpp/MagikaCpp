@@ -1,4 +1,7 @@
 #include "magika_cpp_wrapper.h"
+#include "features.h"
+#include "config.h"
+#include "Seekable.h"
 #include <onnxruntime_cxx_api.h>
 #include <fstream>
 #include <iostream>
@@ -13,39 +16,24 @@ private:
     Ort::Env env;
     Ort::Session session;
     std::vector<std::string> target_labels;
-    
-    // 默认配置参数，匹配standard_v3_3模型
-    static const int BEG_SIZE = 1024;
-    static const int MID_SIZE = 0;
-    static const int END_SIZE = 1024;
-    static const int PADDING_TOKEN = 256;
-    static const int BLOCK_SIZE = 4096;
+    Config config;
     
 public:
-    MagikaImpl(const std::string& model_path);
+    MagikaImpl(const std::string& model_path, const Config& cfg);
     
     void init_target_labels();
-    
-    std::vector<int32_t> extract_features(const std::vector<uint8_t>& content);
-    
-    std::vector<int32_t> extract_beg_features(const std::vector<uint8_t>& content);
-    
-    std::vector<int32_t> extract_mid_features(const std::vector<uint8_t>& content);
-    
-    std::vector<int32_t> extract_end_features(const std::vector<uint8_t>& content);
-    
-    std::vector<int32_t> pad_int32(const std::vector<uint8_t>& bytes, size_t prefix_padding, size_t total_size);
     
     std::pair<std::string, float> scan_file(const std::string& filepath);
     
     std::vector<float> run_inference(const std::vector<int32_t>& features);
 };
 
-MagikaImpl::MagikaImpl(const std::string& model_path) : 
+MagikaImpl::MagikaImpl(const std::string& model_path, const Config& cfg) : 
     env(ORT_LOGGING_LEVEL_WARNING, "MagikaCPP"),
-    session(nullptr) {
+    session(nullptr),
+    config(cfg) {
     
-    // 初始化目标标签空间（简化版，实际应该从配置文件读取）
+    // 初始化目标标签空间
     init_target_labels();
     
     // 创建会话选项
@@ -59,181 +47,25 @@ MagikaImpl::MagikaImpl(const std::string& model_path) :
 }
 
 void MagikaImpl::init_target_labels() {
-    // 从配置文件加载完整的标签列表
-    target_labels = {
-        "3gp", "ace", "ai", "aidl", "apk", "applebplist", "appleplist", "asm", 
-        "asp", "autohotkey", "autoit", "awk", "batch", "bazel", "bib", "bmp", 
-        "bzip", "c", "cab", "cat", "chm", "clojure", "cmake", "cobol", "coff", 
-        "coffeescript", "cpp", "crt", "crx", "cs", "csproj", "css", "csv", 
-        "dart", "deb", "dex", "dicom", "diff", "dm", "dmg", "doc", "dockerfile", 
-        "docx", "dsstore", "dwg", "dxf", "elf", "elixir", "emf", "eml", "epub", 
-        "erb", "erlang", "flac", "flv", "fortran", "gemfile", "gemspec", "gif", 
-        "gitattributes", "gitmodules", "go", "gradle", "groovy", "gzip", "h5", 
-        "handlebars", "haskell", "hcl", "hlp", "htaccess", "html", "icns", "ico", 
-        "ics", "ignorefile", "ini", "internetshortcut", "ipynb", "iso", "jar", 
-        "java", "javabytecode", "javascript", "jinja", "jp2", "jpeg", "json", 
-        "jsonl", "julia", "kotlin", "latex", "lha", "lisp", "lnk", "lua", "m3u", 
-        "m4", "macho", "makefile", "markdown", "matlab", "mht", "midi", "mkv", 
-        "mp3", "mp4", "mscompress", "msi", "mum", "npy", "npz", "nupkg", 
-        "objectivec", "ocaml", "odp", "ods", "odt", "ogg", "one", "onnx", "otf", 
-        "outlook", "parquet", "pascal", "pcap", "pdb", "pdf", "pebin", "pem", 
-        "perl", "php", "pickle", "png", "po", "postscript", "powershell", "ppt", 
-        "pptx", "prolog", "proteindb", "proto", "psd", "python", "pythonbytecode", 
-        "pytorch", "qt", "r", "randombytes", "randomtxt", "rar", "rdf", "rpm", 
-        "rst", "rtf", "ruby", "rust", "scala", "scss", "sevenzip", "sgml", 
-        "shell", "smali", "snap", "solidity", "sql", "sqlite", "squashfs", "srt", 
-        "stlbinary", "stltext", "sum", "svg", "swf", "swift", "tar", "tcl", 
-        "textproto", "tga", "thumbsdb", "tiff", "toml", "torrent", "tsv", "ttf", 
-        "twig", "txt", "typescript", "vba", "vcxproj", "verilog", "vhdl", "vtt", 
-        "vue", "wasm", "wav", "webm", "webp", "winregistry", "wmf", "woff", 
-        "woff2", "xar", "xls", "xlsb", "xlsx", "xml", "xpi", "xz", "yaml", 
-        "yara", "zig", "zip", "zlibstream"
-    };
-}
-
-std::vector<int32_t> MagikaImpl::extract_features(const std::vector<uint8_t>& content) {
-    std::vector<int32_t> features;
-    features.reserve(BEG_SIZE + MID_SIZE + END_SIZE);
-    
-    std::vector<int32_t> beg_features = extract_beg_features(content);
-    features.insert(features.end(), beg_features.begin(), beg_features.end());
-
-    if (MID_SIZE > 0) {
-        std::vector<int32_t> mid_features = extract_mid_features(content);
-        features.insert(features.end(), mid_features.begin(), mid_features.end());
-    }
-
-    std::vector<int32_t> end_features = extract_end_features(content);
-    features.insert(features.end(), end_features.begin(), end_features.end());
-    
-    return features;
-}
-
-std::vector<int32_t> MagikaImpl::extract_beg_features(const std::vector<uint8_t>& content) {
-    size_t beg_size = (std::min)(content.size(), static_cast<size_t>(BLOCK_SIZE));
-    std::vector<uint8_t> beg_bytes(content.begin(), content.begin() + beg_size);
-    
-    // 移除开头的空白字符
-    size_t start_pos = 0;
-    while (start_pos < beg_bytes.size() && 
-           (beg_bytes[start_pos] == '\t' || beg_bytes[start_pos] == '\n' ||
-            beg_bytes[start_pos] == '\v' || beg_bytes[start_pos] == '\f' ||
-            beg_bytes[start_pos] == '\r' || beg_bytes[start_pos] == ' ')) {
-        start_pos++;
-    }
-    
-    // 截取有效部分
-    if (start_pos < beg_bytes.size()) {
-        std::vector<uint8_t> temp_bytes(beg_bytes.begin() + start_pos, beg_bytes.end());
-        beg_bytes = temp_bytes;
-    } else {
-        beg_bytes.clear();
-    }
-    
-    // 限制大小
-    if (beg_bytes.size() > BEG_SIZE) {
-        beg_bytes.resize(BEG_SIZE);
-    }
-    
-    // 转换为int32并填充
-    return pad_int32(beg_bytes, 0, BEG_SIZE);
-}
-
-std::vector<int32_t> MagikaImpl::extract_mid_features(const std::vector<uint8_t>& content) {
-    size_t content_size = content.size();
-    if (content_size <= MID_SIZE) {
-        // 如果内容小于MID_SIZE，直接使用全部内容
-        std::vector<uint8_t> mid_bytes = content;
-        return pad_int32(mid_bytes, (MID_SIZE - mid_bytes.size()) / 2, MID_SIZE);
-    }
-    
-    // 取中间部分
-    size_t mid_start = (content_size - MID_SIZE) / 2;
-    size_t mid_end = (std::min)(mid_start + MID_SIZE, content_size);
-    std::vector<uint8_t> mid_bytes(content.begin() + mid_start, content.begin() + mid_end);
-    
-    return pad_int32(mid_bytes, 0, MID_SIZE);
-}
-
-std::vector<int32_t> MagikaImpl::extract_end_features(const std::vector<uint8_t>& content) {
-    size_t content_size = content.size();
-    size_t block_size = (std::min)(content_size, static_cast<size_t>(BLOCK_SIZE));
-    
-    // 获取末尾BLOCK_SIZE字节
-    size_t end_start = content_size - block_size;
-    std::vector<uint8_t> end_bytes(content.begin() + end_start, content.end());
-    
-    // 移除末尾的空白字符
-    while (!end_bytes.empty() &&
-           (end_bytes.back() == '\t' || end_bytes.back() == '\n' ||
-            end_bytes.back() == '\v' || end_bytes.back() == '\f' ||
-            end_bytes.back() == '\r' || end_bytes.back() == ' ')) {
-        end_bytes.pop_back();
-    }
-    
-    // 限制大小
-    if (end_bytes.size() > END_SIZE) {
-        // 如果仍然超过END_SIZE，从前面截取
-        std::vector<uint8_t> temp_bytes(end_bytes.end() - END_SIZE, end_bytes.end());
-        end_bytes = temp_bytes;
-    }
-    
-    // 填充到END_SIZE
-    return pad_int32(end_bytes, END_SIZE - end_bytes.size(), END_SIZE);
-}
-
-std::vector<int32_t> MagikaImpl::pad_int32(const std::vector<uint8_t>& bytes, size_t prefix_padding, size_t total_size) {
-    std::vector<int32_t> result;
-    result.reserve(total_size);
-    
-    // 添加前缀填充
-    for (size_t i = 0; i < prefix_padding; ++i) {
-        result.push_back(PADDING_TOKEN);
-    }
-    
-    // 添加实际数据
-    for (uint8_t byte : bytes) {
-        result.push_back(static_cast<int32_t>(byte));
-    }
-    
-    // 添加后缀填充
-    while (result.size() < total_size) {
-        result.push_back(PADDING_TOKEN);
-    }
-    
-    // 确保不会超过总大小（理论上不应该发生）
-    if (result.size() > total_size) {
-        result.resize(total_size);
-    }
-    
-    return result;
+    // 使用配置文件中的标签列表
+    target_labels = config.TargetLabelsSpace;
 }
 
 std::pair<std::string, float> MagikaImpl::scan_file(const std::string& filepath) {
-    // 读取文件内容
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-    if (!file) {
-        throw MagikaException("Cannot open file: " + filepath);
-    }
-    
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    
-    std::vector<uint8_t> content(size);
-    if (!file.read(reinterpret_cast<char*>(content.data()), size)) {
-        throw MagikaException("Failed to read file: " + filepath);
-    }
+    // 使用Seekable按需读取文件
+    Seekable seekable(filepath);
     
     // 对于空文件的特殊处理
-    if (content.empty()) {
+    if (seekable.size() == 0) {
         return std::make_pair("empty", 1.0f);
     }
     
     // 提取特征
-    std::vector<int32_t> features = extract_features(content);
+    Features features = ExtractFeaturesFromSeekable(seekable, config);
+    std::vector<int32_t> flattened_features = features.Flatten();
     
     // 运行推理
-    std::vector<float> result = run_inference(features);
+    std::vector<float> result = run_inference(flattened_features);
     
     // 找到最佳匹配
     size_t best_index = 0;
@@ -297,7 +129,26 @@ std::vector<float> MagikaImpl::run_inference(const std::vector<int32_t>& feature
 static std::unique_ptr<MagikaImpl> g_magika_impl = nullptr;
 
 void MagikaScanner::initialize(const std::string& model_path) {
-    g_magika_impl = std::make_unique<MagikaImpl>(model_path);
+    // 从模型路径推断资产目录和模型名称
+    std::string assetsDir = "."; // 默认为当前目录
+    std::string modelName = "standard_v3_3"; // 默认模型名称
+    
+    // 尝试从模型路径提取资产目录
+    // 支持路径格式: ./models/model_name/model.onnx 或 ./models\model_name\model.onnx
+    size_t last_slash = model_path.find_last_of("/\\");
+    if (last_slash != std::string::npos) {
+        size_t second_last_slash = model_path.find_last_of("/\\", last_slash - 1);
+        if (second_last_slash != std::string::npos) {
+            assetsDir = model_path.substr(0, second_last_slash);
+            modelName = model_path.substr(second_last_slash + 1, last_slash - second_last_slash - 1);
+        }
+    }
+    
+    // 读取配置
+    Config cfg = Config::ReadConfig(assetsDir, modelName);
+    
+    // 初始化MagikaImpl
+    g_magika_impl = std::make_unique<MagikaImpl>(model_path, cfg);
 }
 
 std::string MagikaScanner::scanFile(const std::string& filepath) {

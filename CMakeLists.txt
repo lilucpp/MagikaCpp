@@ -1,14 +1,14 @@
-
 cmake_minimum_required(VERSION 3.12)
 project(magika_cpp_wrapper)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # 设置ONNX Runtime路径
 set(ONNXRUNTIME_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime-static-1.17.3/win32")
 
 # 添加包含目录
 include_directories(${ONNXRUNTIME_ROOT}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # 添加库目录
 link_directories(${ONNXRUNTIME_ROOT}/lib)
@@ -19,10 +19,18 @@ find_library(ONNXRUNTIME_LIB
     PATHS ${ONNXRUNTIME_ROOT}/lib
 )
 
+# 查找nlohmann_json库
+find_package(nlohmann_json QUIET)
+
 if(NOT ONNXRUNTIME_LIB)
     message(FATAL_ERROR "ONNX Runtime library not found")
 endif()
 
+# 如果系统中没有安装nlohmann_json，则使用本地的header-only版本
+if(NOT nlohmann_json_FOUND)
+    # 假设nlohmann/json.hpp在include目录下
+    message(STATUS "Using local nlohmann/json.hpp")
+endif()
 
 # 添加编译选项
 if(MSVC)
@@ -53,6 +61,9 @@ endif()
 # 添加纯C++封装库
 add_library(magika_cpp_pure
     magika_cpp_pure.cpp
+    features.cpp
+    config.cpp
+    Seekable.cpp
 )
 
 # 链接ONNX Runtime库
@@ -61,14 +72,10 @@ target_link_libraries(magika_cpp_pure
 )
 
 # 添加纯C++示例程序
-add_executable(pure_cpp_example pure_cpp_example.cpp magika_cpp_pure.cpp magika_cpp_wrapper.cpp)
+add_executable(pure_cpp_example pure_cpp_example.cpp magika_cpp_pure.cpp magika_cpp_wrapper.cpp features.cpp config.cpp Seekable.cpp)
 
 # 添加新的递归扫描测试程序
-add_executable(test_recursive_scan test_recursive_scan.cpp magika_cpp_pure.cpp magika_cpp_wrapper.cpp)
-
-# 设置C++标准
-set_property(TARGET pure_cpp_example PROPERTY CXX_STANDARD 11)
-set_property(TARGET test_recursive_scan PROPERTY CXX_STANDARD 17)
+add_executable(test_recursive_scan test_recursive_scan.cpp magika_cpp_pure.cpp magika_cpp_wrapper.cpp features.cpp config.cpp Seekable.cpp)
 
 # 链接ONNX Runtime库
 target_link_libraries(pure_cpp_example ${ONNXRUNTIME_LIB})
