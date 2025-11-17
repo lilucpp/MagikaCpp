@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
     set(ONNXRUNTIME_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/libs/onnxruntime-static-1.17.3/win32")
 else()
-    set(ONNXRUNTIME_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/libs/onnxruntime-1.17.3/linux")
+    set(ONNXRUNTIME_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/libs/onnxruntime-static-1.17.3/linux")
 endif()
 
 # 添加包含目录
