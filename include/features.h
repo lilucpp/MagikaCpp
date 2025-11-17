@@ -1,10 +1,11 @@
-#ifndef FEATURES_H
-#define FEATURES_H
+#ifndef MAGIKACPP_FEATURES_H_
+#define MAGIKACPP_FEATURES_H_
 
 #include <vector>
 #include <cstdint>
 #include <string>
 #include "config.h"
+#include "seekable.h"
 
 // Forward declaration
 class Seekable;
@@ -13,20 +14,20 @@ class Seekable;
  * Features holds the features of a given slice of bytes.
  */
 struct Features {
-    std::vector<uint8_t> firstBlock;
-    std::vector<int32_t> Beg;
-    std::vector<int32_t> Mid;
-    std::vector<int32_t> End;
-    std::vector<int32_t> Offset8000;
-    std::vector<int32_t> Offset8800;
-    std::vector<int32_t> Offset9000;
-    std::vector<int32_t> Offset9800;
-    
-    /**
-     * Flatten returns a flattened array of the given features.
-     * @return Flattened feature array
-     */
-    std::vector<int32_t> Flatten() const;
+  std::vector<uint8_t> first_block;
+  std::vector<int32_t> beg;
+  std::vector<int32_t> mid;
+  std::vector<int32_t> end;
+  std::vector<int32_t> offset_8000;
+  std::vector<int32_t> offset_8800;
+  std::vector<int32_t> offset_9000;
+  std::vector<int32_t> offset_9800;
+  
+  /**
+   * Flatten returns a flattened array of the given features.
+   * @return Flattened feature array
+   */
+  std::vector<int32_t> Flatten() const;
 };
 
 /**
@@ -46,15 +47,15 @@ Features ExtractFeatures(const std::vector<uint8_t>& content, const Config& cfg)
 Features ExtractFeaturesFromSeekable(Seekable& seekable, const Config& cfg);
 
 // Configuration constants
-const int BEG_SIZE = 1024;
-const int MID_SIZE = 0;
-const int END_SIZE = 1024;
-const int PADDING_TOKEN = 256;
-const int BLOCK_SIZE = 4096;
-const int OFFSET_8000 = 0x8000;
-const int OFFSET_8800 = 0x8800;
-const int OFFSET_9000 = 0x9000;
-const int OFFSET_9800 = 0x9800;
-const int OFFSET_SIZE = 8;
+const int k_beg_size = 1024;
+const int k_mid_size = 0;
+const int k_end_size = 1024;
+const int k_padding_token = 256;
+const int k_block_size = 4096;
+const int k_offset_8000 = 0x8000;
+const int k_offset_8800 = 0x8800;
+const int k_offset_9000 = 0x9000;
+const int k_offset_9800 = 0x9800;
+const int k_offset_size = 8;
 
-#endif // FEATURES_H
+#endif  // MAGIKACPP_FEATURES_H_

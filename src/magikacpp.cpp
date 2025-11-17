@@ -7,7 +7,7 @@
 #include "magikacpp.h"
 #include "features.h"
 #include "config.h"
-#include "Seekable.h"
+#include "seekable.h"
 
 #ifdef __cplusplus
 extern "C" {

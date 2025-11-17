@@ -1,5 +1,5 @@
-#ifndef SEEKABLE_H
-#define SEEKABLE_H
+#ifndef MAGIKACPP_SEEKABLE_H_
+#define MAGIKACPP_SEEKABLE_H_
 
 #include <string>
 #include <vector>
@@ -7,35 +7,35 @@
 #include <memory>
 
 class Seekable {
-private:
-    std::unique_ptr<std::ifstream> file_stream;
-    size_t file_size;
+ private:
+  std::unique_ptr<std::ifstream> file_stream;
+  size_t file_size;
 
-public:
-    /**
-     * 构造函数，从文件路径创建Seekable对象
-     * @param filepath 文件路径
-     */
-    Seekable(const std::string& filepath);
-    
-    /**
-     * 析构函数
-     */
-    ~Seekable();
-    
-    /**
-     * 获取文件大小
-     * @return 文件大小（字节）
-     */
-    size_t size() const;
-    
-    /**
-     * 从指定偏移量读取指定大小的数据
-     * @param offset 偏移量
-     * @param size 要读取的字节数
-     * @return 读取的数据
-     */
-    std::vector<uint8_t> read_at(size_t offset, size_t size);
+ public:
+  /**
+   * Constructor that creates a Seekable object from a file path
+   * @param filepath Path to the file
+   */
+  explicit Seekable(const std::string& filepath);
+  
+  /**
+   * Destructor
+   */
+  ~Seekable();
+  
+  /**
+   * Get the file size
+   * @return File size in bytes
+   */
+  size_t size() const;
+  
+  /**
+   * Read data of specified size from a given offset
+   * @param offset Offset to start reading from
+   * @param size Number of bytes to read
+   * @return Read data
+   */
+  std::vector<uint8_t> read_at(size_t offset, size_t size);
 };
 
-#endif // SEEKABLE_H
+#endif  // MAGIKACPP_SEEKABLE_H_
