@@ -1,4 +1,4 @@
-# Magika C++ 封装
+# MagikaCPP 封装
 
 本项目为 Magika 文件类型检测模型提供了一个 C++ 封装。Magika 是一个基于神经网络的文件类型检测系统，能够以高精度识别超过 100 种文件类型。
 
@@ -44,19 +44,19 @@ make
 
 ```cmd
 # Windows
-.\build\Release\pure_cpp_example.exe .\models\standard_v3_3\model.onnx example_file.txt
+.\build\Release\example.exe .\models\standard_v3_3\model.onnx example_file.txt
 
 # Linux
-./build/pure_cpp_example ./models/standard_v3_3/model.onnx example_file.txt
+./build/example ./models/standard_v3_3/model.onnx example_file.txt
 ```
 
 ### 在您的 C++ 项目中使用
 
-要在您自己的项目中使用 Magika C++ 封装：
+要在您自己的项目中使用 MagikaCPP：
 
 1. 包含头文件：
    ```cpp
-   #include "magika_cpp_wrapper.h"
+   #include "magikacpp.h"
    ```
 
 2. 使用模型路径初始化扫描器：
@@ -83,12 +83,12 @@ make
 
 项目由几个组件组成：
 
-1. **Magika C++ 核心** ([magika_cpp_pure.cpp](file:///h:/wkspace/test_magic_model/magika_cpp_pure.cpp))：C++ 中的 Magika 算法主要实现
-2. **C 封装** ([magika_cpp_wrapper.cpp/.h](file:///h:/wkspace/test_magic_model/magika_cpp_wrapper.h))：便于集成的 C 风格 API
+1. **Magika C++ 核心实现** ([magikacppimpl.cpp](file:///h:/wkspace/test_magic_model/src/magikacppimpl.cpp))：C++ 中的 Magika 算法主要实现
+2. **Magika C++ API接口** ([magikacpp.h/.cpp](file:///h:/wkspace/test_magic_model/magikacpp.h))：便于集成的 C 风格 API
 3. **Seekable 类** ([Seekable.cpp/.h](file:///h:/wkspace/test_magic_model/Seekable.h))：支持按需访问的高效文件读取
 4. **特征提取器** ([features.cpp/.h](file:///h:/wkspace/test_magic_model/features.h))：从文件中提取特征
 5. **配置读取器** ([config.cpp/.h](file:///h:/wkspace/test_magic_model/config.h))：从 JSON 读取模型配置
-6. **示例** ([pure_cpp_example.cpp](file:///h:/wkspace/test_magic_model/pure_cpp_example.cpp), [test_recursive_scan.cpp](file:///h:/wkspace/test_magic_model/test_recursive_scan.cpp))：库的使用示例
+6. **示例** ([example.cpp](file:///h:/wkspace/test_magic_model/example.cpp), [test_recursive_scan.cpp](file:///h:/wkspace/test_magic_model/test_recursive_scan.cpp))：库的使用示例
 
 ## 内存效率
 

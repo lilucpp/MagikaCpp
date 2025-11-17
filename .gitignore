@@ -1,4 +1,2 @@
 build/*
-go/*
-onnxruntime-static-1.17.3/*
-python/*
+libs/*
