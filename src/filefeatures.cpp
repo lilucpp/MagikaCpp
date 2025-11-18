@@ -1,4 +1,4 @@
-#include "features.h"
+#include "filefeatures.h"
 #include "seekable.h"
 #include <algorithm>
 #include <cstring>

@@ -1,5 +1,5 @@
 #include "magikacpp.h"
-#include "features.h"
+#include "filefeatures.h"
 #include "config.h"
 #include "seekable.h"
 #include <onnxruntime_cxx_api.h>
@@ -10,6 +10,24 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>
+
+namespace impl {
+#ifdef _WIN32
+  std::wstring utf8_to_wstring(const std::string& str)
+  {
+      int size_needed = MultiByteToWideChar(CP_UTF8, 0,
+                                            str.c_str(), (int)str.size(),
+                                            nullptr, 0);
+      std::wstring wstr(size_needed, 0);
+      MultiByteToWideChar(CP_UTF8, 0,
+                          str.c_str(), (int)str.size(),
+                          &wstr[0], size_needed);
+      return wstr;
+  }
+
+  std::wstring ort_model_path = utf8_to_wstring(model_path);
+#endif
+}
 
 class MagikaImpl {
  private:
@@ -42,8 +60,12 @@ MagikaImpl::MagikaImpl(const std::string& model_path, const Config& cfg) :
   session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
   
   // Create session
-  std::wstring wmodel_path(model_path.begin(), model_path.end());
-  session = Ort::Session(env, wmodel_path.c_str(), session_options);
+#ifdef _WIN32
+  std::wstring ort_model_path = impl::utf8_to_wstring(model_path);
+#else
+  std::string ort_model_path = model_path;
+#endif
+  session = Ort::Session(env, ort_model_path.c_str(), session_options);
 }
 
 void MagikaImpl::InitTargetLabels() {

@@ -68,7 +68,7 @@ endif()
 add_library(magikacpp
     src/magikacppimpl.cpp
     src/magikacpp.cpp
-    src/features.cpp
+    src/filefeatures.cpp
     src/config.cpp
     src/seekable.cpp
 )
@@ -79,10 +79,10 @@ target_link_libraries(magikacpp
 )
 
 # 添加纯C++示例程序
-add_executable(example examples/example.cpp src/magikacppimpl.cpp src/magikacpp.cpp src/features.cpp src/config.cpp src/seekable.cpp)
+add_executable(example examples/example.cpp src/magikacppimpl.cpp src/magikacpp.cpp src/filefeatures.cpp src/config.cpp src/seekable.cpp)
 
 # 添加新的递归扫描测试程序
-add_executable(test_recursive_scan examples/test_recursive_scan.cpp src/magikacppimpl.cpp src/magikacpp.cpp src/features.cpp src/config.cpp src/seekable.cpp)
+add_executable(test_recursive_scan examples/test_recursive_scan.cpp src/magikacppimpl.cpp src/magikacpp.cpp src/filefeatures.cpp src/config.cpp src/seekable.cpp)
 
 # 链接ONNX Runtime库
 target_link_libraries(example ${ONNXRUNTIME_LIB})
@@ -103,6 +103,22 @@ if(WIN32)
     add_custom_command(TARGET test_recursive_scan POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${ONNXRUNTIME_ROOT}/bin/onnxruntime.dll
+        $<TARGET_FILE_DIR:test_recursive_scan>
+    )
+else() 
+    add_custom_command(TARGET example POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${ONNXRUNTIME_ROOT}/lib/libonnxruntime.so
+        ${ONNXRUNTIME_ROOT}/lib/libonnxruntime.so.1.17.3
+        ${ONNXRUNTIME_ROOT}/lib/libonnxruntime_providers_shared.so
+        $<TARGET_FILE_DIR:example>
+    )
+    
+    add_custom_command(TARGET test_recursive_scan POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        {ONNXRUNTIME_ROOT}/lib/libonnxruntime.so
+        ${ONNXRUNTIME_ROOT}/lib/libonnxruntime.so.1.17.3
+        ${ONNXRUNTIME_ROOT}/lib/libonnxruntime_providers_shared.so
         $<TARGET_FILE_DIR:test_recursive_scan>
     )
 endif()

@@ -1,4 +1,4 @@
-#include "Seekable.h"
+#include "seekable.h"
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
