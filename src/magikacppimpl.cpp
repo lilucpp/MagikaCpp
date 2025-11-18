@@ -11,21 +11,23 @@
 #include <cstring>
 #include <memory>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+
 namespace impl {
 #ifdef _WIN32
-  std::wstring utf8_to_wstring(const std::string& str)
-  {
-      int size_needed = MultiByteToWideChar(CP_UTF8, 0,
-                                            str.c_str(), (int)str.size(),
-                                            nullptr, 0);
-      std::wstring wstr(size_needed, 0);
-      MultiByteToWideChar(CP_UTF8, 0,
-                          str.c_str(), (int)str.size(),
-                          &wstr[0], size_needed);
-      return wstr;
+  std::wstring Utf8ToWstring(const std::string& str) {
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0,
+                                          str.c_str(), (int)str.size(),
+                                          nullptr, 0);
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0,
+                        str.c_str(), (int)str.size(),
+                        &wstr[0], size_needed);
+    return wstr;
   }
-
-  std::wstring ort_model_path = utf8_to_wstring(model_path);
 #endif
 }
 
@@ -61,7 +63,7 @@ MagikaImpl::MagikaImpl(const std::string& model_path, const Config& cfg) :
   
   // Create session
 #ifdef _WIN32
-  std::wstring ort_model_path = impl::utf8_to_wstring(model_path);
+  std::wstring ort_model_path = impl::Utf8ToWstring(model_path);
 #else
   std::string ort_model_path = model_path;
 #endif

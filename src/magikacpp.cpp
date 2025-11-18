@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstring>
 #include "magikacpp.h"
-#include "features.h"
+#include "filefeatures.h"
 #include "config.h"
 #include "seekable.h"
 
